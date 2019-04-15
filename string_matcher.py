@@ -1,3 +1,5 @@
+import re
+
 def buildLast(pattern):
     dict = {}
     for letter in pattern:
@@ -72,8 +74,8 @@ def kmpMatch(text, pattern):
 
 def main():
     compare_count = 0
-    text = input("Input text: ")
-    pattern = input("Pattern to search: ")
+    text = input("Input text: ").lower()
+    pattern = input("Pattern to search: ").lower()
 
     print()
 
@@ -86,7 +88,7 @@ def main():
         print("Pattern found in idx: " + str(res))
 
     print()
-    
+
     print("Pattern search with BM: ")
     res, compare_count = bmMatch(text, pattern)
     print("Total comparison: " + str(compare_count))
