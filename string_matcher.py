@@ -8,25 +8,21 @@ stemmer = factory.create_stemmer()
 pertanyaan = []
 jawaban = []
 
+def readFile(filename):
+    f = open("database/pertanyaan.txt", "r")
+    if(f.mode == 'r'):
+        content = f.readlines()
+    for i in range(len(content)):
+        pisah = re.split("[?]", content[i])
+        pertanyaan.append(stemmer.stem(pisah[0].lstrip('0123456789.- ').lower()))
+        jawaban.append(pisah[1].lstrip(' ').replace('\n', ' ').lower())
+    f.close()
+
 #Baca kasus uji asisten
-f = open("database/pertanyaan.txt", "r")
-if(f.mode == 'r'):
-    content = f.readlines()
-for i in range(len(content)):
-    pisah = re.split("[?]", content[i])
-    pertanyaan.append(stemmer.stem(pisah[0].lstrip('0123456789.- ').lower()))
-    jawaban.append(pisah[1].lstrip(' ').replace('\n', ' ').lower())
-f.close()
+readFile("pertanyaan.txt")
 
 #Baca kasus uji sendiri
-f = open("database/qa.txt", "r")
-if(f.mode == 'r'):
-    content = f.readlines()
-for i in range(len(content)):
-    pisah = re.split("[?]", content[i])
-    pertanyaan.append(stemmer.stem(pisah[0].lower()))
-    jawaban.append(pisah[1].lstrip(' ').replace('\n', ' ').lower())
-f.close()
+readFile("qa.txt")
 
 def buildLast(pattern):
     dict = {}
@@ -158,13 +154,14 @@ def find_fuzzy_match(match_string, text):
     return (count / n >= 0.9)
 
 def search_in_db(pattern):
+    stemmedPattern = stemmer.stem(pattern.lower().replace('?', ''))
     #Mencari yang exact match
     for question in pertanyaan:
-        if(bmMatch(pattern, question) > -1):
-            return jawaban[pertanyaan.index(pattern)]
+        if(bmMatch(stemmedPattern, question) > -1):
+            return jawaban[pertanyaan.index(question)]
     #Mencari yang mirip > 90%
     for question in pertanyaan:
-        if(find_fuzzy_match(pattern, question)):
+        if(find_fuzzy_match(stemmedPattern, question)):
             return jawaban[pertanyaan.index(question)]
             break
     #Jika tidak ada yang ketemu
@@ -173,7 +170,7 @@ def search_in_db(pattern):
 def main():
     # compare_count = 0
     # text = input("Input text: ").lower()
-    pattern = input("Pattern to search: ").lower().replace('?', '')
+    pattern = input("Pattern to search: ")
     #
     # print()
     #
@@ -198,13 +195,13 @@ def main():
     # print("Input Text: Apa julukan blackhole yang hadir dalam pusat galaksi bimasakti itu?")
     # print("Testing to find:",stemmer.stem(testPattern))
     # extractedText = extractKata(testText)
-    stemmedPattern = stemmer.stem(pattern)
+    # stemmedPattern = stemmer.stem(pattern)
     # print("Question in Database:",str(stemmedPattern))
     # print("Extracted Text after it is changed:",str(extractedText))
     # x = find_fuzzy_match(str(stemmedPattern),str(extractedText))
     # if True in x:
     #     print("Blackhole M8715")
-    res = search_in_db(stemmedPattern)
+    res = search_in_db(pattern)
     print(res)
 
 
