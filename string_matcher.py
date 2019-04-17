@@ -1,4 +1,6 @@
 import re
+from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
+import lib.tesaurus as tesaurus
 
 def buildLast(pattern):
     dict = {}
@@ -72,7 +74,59 @@ def kmpMatch(text, pattern):
             i += 1
     return -1, count
 
+#TEMPORARY DATABASE FOR WORDS THAT ARE INCLUDED IN THE QUESTIONS DATABASE
+listBaseWords = ['apa','tengah','nama', 'ada','di']
+
+def extractKata(text):
+    # create stemmer for sastrawi
+    factory = StemmerFactory()
+    stemmer = factory.create_stemmer()
+    splitText = text.split()
+    #print(splitText)
+    for i in range(0,len(splitText)):
+        j = 0
+        found = False
+        while (not(found)) and (j < len(listBaseWords)):
+            #print(splitText[i],listBaseWords[j])
+            if splitText[i] in tesaurus.getSinonim(listBaseWords[j]):
+                splitText[i] = listBaseWords[j]
+                found = True
+            else:
+                j += 1
+    #print(splitText)
+    combinedText = ' '.join(splitText)
+    stemmedCombinedText = stemmer.stem(combinedText)
+    #print(stemmedCombinedText)
+    return stemmedCombinedText
+
+def find_fuzzy_match(match_string, text):
+    # use an iterator so that we can skip to the end of a match.
+    text_iter = enumerate(text)
+    for index, char in text_iter:
+        try:
+            match_start = match_string.index(char)
+        except ValueError:
+            continue
+        match_count = 0
+        zip_char = zip(match_string[match_start:], text[index:])
+        for match_index, (match_char, text_char) in enumerate(zip_char):
+            if match_char == text_char:
+                match_count += 1
+                last_match = match_index
+        if match_count >= len(match_string) * 0.9:
+            #yield index, index + last_match
+            yield True
+            # Advance the iterator past the match
+            for x in range(last_match):
+                next(text_iter)    
+
 def main():
+    #Testing Sastrawi
+    testText = "Apa julukan blackhole yang hadir dalam pusat galaksi bimasakti itu?"
+    testPattern = "Apa nama blackhole yang berada di tengah galaksi bimasakti?"
+    factory = StemmerFactory()
+    stemmer = factory.create_stemmer()
+    #End Test
     compare_count = 0
     text = input("Input text: ").lower()
     pattern = input("Pattern to search: ").lower()
@@ -96,6 +150,17 @@ def main():
         print("Pattern not found")
     else:
         print("Pattern found in idx: " + str(res))
+
+    print("Input Text: Apa julukan blackhole yang hadir dalam pusat galaksi bimasakti itu?")
+    print("Testing to find:",stemmer.stem(testPattern))
+    extractedText = extractKata(testText)
+    stemmedPattern = stemmer.stem(testPattern)
+    print("Question in Database:",str(stemmedPattern))
+    print("Extracted Text after it is changed:",str(extractedText))
+    x = find_fuzzy_match(str(stemmedPattern),str(extractedText))
+    if True in x:
+        print("Blackhole M8715")
+    
 
 if __name__ == "__main__":
     main()
