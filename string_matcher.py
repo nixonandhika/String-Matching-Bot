@@ -7,9 +7,11 @@ stemmer = factory.create_stemmer()
 
 pertanyaan = []
 jawaban = []
+q_list = []
 
+#Baca file
 def readFile(filename):
-    f = open("database/pertanyaan.txt", "r")
+    f = open("database/" + filename, "r")
     if(f.mode == 'r'):
         content = f.readlines()
     for i in range(len(content)):
@@ -93,29 +95,29 @@ def kmpMatch(pattern, text):
     return -1
 
 #TEMPORARY DATABASE FOR WORDS THAT ARE INCLUDED IN THE QUESTIONS DATABASE
-listBaseWords = ['apa','tengah','nama', 'ada','di']
-
-def extractKata(text):
-    # create stemmer for sastrawi
-    factory = StemmerFactory()
-    stemmer = factory.create_stemmer()
-    splitText = text.split()
-    #print(splitText)
-    for i in range(0,len(splitText)):
-        j = 0
-        found = False
-        while (not(found)) and (j < len(listBaseWords)):
-            #print(splitText[i],listBaseWords[j])
-            if splitText[i] in tesaurus.getSinonim(listBaseWords[j]):
-                splitText[i] = listBaseWords[j]
-                found = True
-            else:
-                j += 1
-    #print(splitText)
-    combinedText = ' '.join(splitText)
-    stemmedCombinedText = stemmer.stem(combinedText)
-    #print(stemmedCombinedText)
-    return stemmedCombinedText
+# listBaseWords = ['apa','tengah','nama', 'ada','di']
+#
+# def extractKata(text):
+#     # create stemmer for sastrawi
+#     factory = StemmerFactory()
+#     stemmer = factory.create_stemmer()
+#     splitText = text.split()
+#     #print(splitText)
+#     for i in range(0,len(splitText)):
+#         j = 0
+#         found = False
+#         while (not(found)) and (j < len(listBaseWords)):
+#             #print(splitText[i],listBaseWords[j])
+#             if splitText[i] in tesaurus.getSinonim(listBaseWords[j]):
+#                 splitText[i] = listBaseWords[j]
+#                 found = True
+#             else:
+#                 j += 1
+#     #print(splitText)
+#     combinedText = ' '.join(splitText)
+#     stemmedCombinedText = stemmer.stem(combinedText)
+#     #print(stemmedCombinedText)
+#     return stemmedCombinedText
 
 def find_fuzzy_match(match_string, text):
     # use an iterator so that we can skip to the end of a match.
@@ -150,20 +152,62 @@ def find_fuzzy_match(match_string, text):
             count += 1
         else:
             break
-    print("percentage: " + str(count/n))
     return (count / n >= 0.9)
 
+
+def build_multiple():
+    temp = "Apakah yang Anda maksud:\n"
+    for i in range(len(q_list)):
+        if(i > 2):
+            break;
+        temp += str(i+1) + ". " + q_list[i] + "?\n"
+    return temp
+
 def search_in_db(pattern):
+    if(len(pattern) == 0):
+        return "Silahkan masukkan pertanyaan"
+
+    #Untuk menerima bagian yang lebih dari satu kemungkinan
+    if(pattern == "1"):
+        return jawaban[pertanyaan.index(q_list[0])]
+    elif(pattern == "2"):
+        return jawaban[pertanyaan.index(q_list[1])]
+    elif(pattern == "3"):
+        return jawaban[pertanyaan.index(q_list[2])]
+    else:
+        q_list.clear()
+
     stemmedPattern = stemmer.stem(pattern.lower().replace('?', ''))
+
     #Mencari yang exact match
     for question in pertanyaan:
         if(bmMatch(stemmedPattern, question) > -1):
-            return jawaban[pertanyaan.index(question)]
+            q_list.append(question)
+    if(len(q_list) > 1):
+        return build_multiple()
+    elif(len(q_list) == 1):
+        return jawaban[pertanyaan.index(q_list[0])]
+
     #Mencari yang mirip > 90%
     for question in pertanyaan:
         if(find_fuzzy_match(stemmedPattern, question)):
-            return jawaban[pertanyaan.index(question)]
-            break
+            q_list.append(question)
+    if(len(q_list) > 1):
+        return build_multiple()
+    elif(len(q_list) == 1):
+        return jawaban[pertanyaan.index(q_list[0])]
+
+    #Regex
+    get_word = re.findall(r'^\w+|\w+$', stemmedPattern)
+    src_rx = r'' + re.escape(get_word[0]) + r'(.*?)' + re.escape(get_word[1])
+    for question in pertanyaan:
+        if(re.search(src_rx, question, re.IGNORECASE)):
+            q_list.append(question)
+    if(len(q_list) > 1):
+        return build_multiple()
+    elif(len(q_list) == 1):
+        return jawaban[pertanyaan.index(q_list[0])]
+
     #Jika tidak ada yang ketemu
     return "Maaf, saya tidak mengerti pertanyaan Anda"
 
@@ -203,7 +247,10 @@ def main():
     #     print("Blackhole M8715")
     res = search_in_db(pattern)
     print(res)
-
+    if(len(q_list) > 1):
+        pattern = input("> ")
+        res = search_in_db(pattern)
+        print(res)
 
 if __name__ == "__main__":
     main()
