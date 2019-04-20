@@ -41,46 +41,22 @@ $app->post('/', function ($request, $response)
 	$httpClient = new \LINE\LINEBot\HTTPClient\CurlHTTPClient($_ENV['CHANNEL_ACCESS_TOKEN']);
 	$bot = new \LINE\LINEBot($httpClient, ['channelSecret' => $_ENV['CHANNEL_SECRET']]);
 	$data = json_decode($body, true);
-	$count = 0;
 	$reply = "";
 	foreach ($data['events'] as $event)
 	{
-		$userMessage = $event['message']['text'];
-		$userMessage = "\"" . strtolower($userMessage) . "\"";
-		$temp = "\"" . "halo" . "\"";
-		if($userMessage == temp){
-			$reply = "Halo hi";
+		$usermsg = $event['message']['text'];
+		$usermsg = strtolower($usermsg);
+		if($usermsg == "halo" || $usermsg == "hi"){
+			$reply = "Halo juga, aku Slothy!";
 		} else{
-			if($count > 1){
-				if($userMessage == "1"){
-					echo $reply_split[0];
-					$reply = exec("cd engine && python string_matcher.py " . "\"" . $reply_split[0]) . "\"";
-				} else if($userMessage == "2"){
-					echo $reply_split[1];
-					$reply = exec("cd engine && python string_matcher.py " . "\"" . $reply_split[1]) . "\"";
-				} else if($userMessage == "3"){
-					echo $reply_split[2];
-					$reply = exec("cd engine && python string_matcher.py " . "\"" . $reply_split[2]) . "\"";
-				} else{
-					$reply = exec("cd engine && python string_matcher.py ?");
-				}
-				$reply_split = explode("<BR>", $reply);
-				$count = 0;
-			} else{
-				$exec_command = "cd engine && python string_matcher.py " . $userMessage;
-				$reply = exec($exec_command);
-				$reply_split = explode("<BR>", $reply);
-				foreach($reply_split as $piece){
-					$count++;
-				}
-				if($count == 1){
-					$count = 0;
-				}
-			}
+			$exec_command = "cd engine && python string_matcher.py " . "\"" . $usermsg . "\"";
+			$reply = exec($exec_command);
+			$reply = str_replace('"', "", $reply);
 		}
-    $textMessageBuilder = new \LINE\LINEBot\MessageBuilder\TextMessageBuilder($reply);
-		$result = $bot->replyMessage($event['replyToken'], $textMessageBuilder);
-		return $result->getHTTPStatus() . ' ' . $result->getRawBody();
+		$reply = str_replace("<BR>", "\n", $reply);
+    $msgbuilder = new \LINE\LINEBot\MessageBuilder\TextMessageBuilder($reply);
+		$res = $bot->replyMessage($event['replyToken'], $msgbuilder);
+		return $res->getHTTPStatus() . ' ' . $res->getRawBody();
 	}
 });
 

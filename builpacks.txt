@@ -1,0 +1,2 @@
+heroku buildpacks:set heroku/php
+heroku buildpacks:add --index 2 heroku/python

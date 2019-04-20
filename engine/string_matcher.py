@@ -154,8 +154,6 @@ def find_fuzzy_match(match_string, text):
     for i in range(limit):
         if(match_string[i] == text[i]):
             count += 1
-        else:
-            break
     return (count / n >= 0.9)
 
 
@@ -164,7 +162,7 @@ def build_multiple():
     for i in range(len(q_list)):
         if(i > 2):
             break;
-        temp += str(i+1) + ". " + q_list[i] + "?<BR>"
+        temp += "- " + q_list[i] + "?<BR>"
     return temp
 
 def search_in_db(pattern):
@@ -172,6 +170,12 @@ def search_in_db(pattern):
     strip_pattern = strip_pattern.lstrip('0123456789 ')
     if(len(strip_pattern) == 0):
         return json.dumps("Pertanyaan tidak valid, silahkan masukkan pertanyaan yang benar")
+
+    if(pattern == "q_list"):
+        temp = ""
+        for question in pertanyaan_asli:
+            temp += question + "?" + "<BR>";
+        return json.dumps(temp)
 
     #Untuk menerima bagian yang lebih dari satu kemungkinan
     if(pattern == "1"):
@@ -224,7 +228,7 @@ def search_in_db(pattern):
         return json.dumps(jawaban[pertanyaan.index(stemmedPattern)])
 
     #Jika tidak ada yang ketemu
-    return json.dumps("Maaf, saya tidak mengerti pertanyaan Anda")
+    return json.dumps("Maaf, aku tidak mengerti pertanyaan Anda")
 
 def main():
     # compare_count = 0
