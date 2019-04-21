@@ -3,6 +3,7 @@ from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
 import lib.tesaurus as tesaurus
 import sys
 import json
+import itertools
 
 factory = StemmerFactory()
 stemmer = factory.create_stemmer()
@@ -19,7 +20,7 @@ def readFile(filename):
         content = f.readlines()
     for i in range(len(content)):
         pisah = re.split("[?]", content[i])
-        pertanyaan_asli.append(pisah[0].lstrip('0123456789.- '))
+        pertanyaan_asli.append(pisah[0].lstrip('0123456789.- ').lower())
         pertanyaan.append(stemmer.stem(pisah[0].lstrip('0123456789.- ').lower()))
         jawaban.append(pisah[1].lstrip(' ').replace('\n', ' '))
     f.close()
@@ -197,20 +198,24 @@ def search_in_db(pattern):
         if(bmMatch(stemmedPattern, question) > -1):
             q_list.append(pertanyaan_asli[pertanyaan.index(question)])
     if(len(q_list) > 1):
-        return json.dumps(build_multiple())
+        #return json.dumps(build_multiple())
+        return build_multiple()
     elif(len(q_list) == 1):
         stemmedPattern = stemmer.stem(q_list[0].lower().replace('?', ''))
-        return json.dumps(jawaban[pertanyaan.index(stemmedPattern)])
+        #return json.dumps(jawaban[pertanyaan.index(stemmedPattern)])
+        return jawaban[pertanyaan.index(stemmedPattern)]
 
     #Mencari yang mirip > 90%
     for question in pertanyaan:
         if(find_fuzzy_match(stemmedPattern, question)):
             q_list.append(pertanyaan_asli[pertanyaan.index(question)])
     if(len(q_list) > 1):
-        return json.dumps(build_multiple())
+        #return json.dumps(build_multiple())
+        return build_multiple()
     elif(len(q_list) == 1):
         stemmedPattern = stemmer.stem(q_list[0].lower().replace('?', ''))
-        return json.dumps(jawaban[pertanyaan.index(stemmedPattern)])
+        #return json.dumps(jawaban[pertanyaan.index(stemmedPattern)])
+        return jawaban[pertanyaan.index(stemmedPattern)]
 
     #Regex
     get_word = re.findall(r'^\w+|\w+$', stemmedPattern)
@@ -219,21 +224,29 @@ def search_in_db(pattern):
     else:
         src_rx = r'' + re.escape(get_word[0]) + r'(.*?)'
     for question in pertanyaan:
+        #print(question)
         if(re.search(src_rx, question, re.IGNORECASE)):
             q_list.append(pertanyaan_asli[pertanyaan.index(question)])
-    if(len(q_list) > 1):
-        return json.dumps(build_multiple())
-    elif(len(q_list) == 1):
+   #elif(len(q_list) == 1):
+    if(len(q_list) == 1):
         stemmedPattern = stemmer.stem(q_list[0].lower().replace('?', ''))
-        return json.dumps(jawaban[pertanyaan.index(stemmedPattern)])
+        #print('test',stemmedPattern)
+        #return json.dumps(jawaban[pertanyaan.index(stemmedPattern)])
+        return jawaban[pertanyaan.index(stemmedPattern)]
+    #elif(len(q_list) > 1):
+        #return json.dumps(build_multiple())
+        #return build_multiple()
+
 
     #Jika tidak ada yang ketemu
-    return json.dumps("Maaf, aku tidak mengerti pertanyaan Anda")
+    #return json.dumps("Maaf, aku tidak mengerti pertanyaan Anda")
 
 def main():
     # compare_count = 0
     # text = input("Input text: ").lower()
-    pattern = input("Pattern to search: ")
+    #patternTemp = input("Pattern to search: ")
+    #pattern = patternTemp.replace('?', '')
+    pattern = sys.argv[1].replace('?', '')
     #
     # print()
     #
@@ -264,13 +277,31 @@ def main():
     # x = find_fuzzy_match(str(stemmedPattern),str(extractedText))
     # if True in x:
     #     print("Blackhole M8715")
-    res = search_in_db(pattern)
-    print(res)
+    splitTestString = pattern.split()
+    for i in range(len(splitTestString)):
+        tempList = [splitTestString[i]]
+        for item in tesaurus.getSinonim(splitTestString[i]):
+            tempList.append(item)
+        splitTestString[i] = tempList
+    splitPermutationTestString = list(itertools.product(*splitTestString))
+    #print(splitPermutationTestString)
+    combinedTestString = []
+    for i in range(len(splitPermutationTestString)):
+        combinedTestString.append(' '.join(splitPermutationTestString[i]))
+    for i in range(len(combinedTestString)):
+        res = search_in_db(combinedTestString[i])
+        if res is not None:
+            print(res)
+            break
+        else:
+            q_list.clear()
     if(len(q_list) > 1):
-        pattern = input("> ")
+        #pattern = input("> ")
         res = search_in_db(pattern)
         print(res)
+    if res is None:
+        print("Maaf, saya tidak mengerti pertanyaan Anda")
 
 if __name__ == "__main__":
-    # main()
-    print(search_in_db(sys.argv[1]))
+    main()
+    #print(search_in_db(sys.argv[1]))
