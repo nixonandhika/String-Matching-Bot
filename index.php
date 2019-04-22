@@ -1,8 +1,6 @@
 <?php
 require __DIR__ . '/vendor/autoload.php';
 
-use \LINE\LINEBot\SignatureValidator as SignatureValidator;
-
 // load config
 $dotenv = new Dotenv\Dotenv(__DIR__);
 $dotenv->load();
@@ -23,20 +21,10 @@ $app->post('/', function ($request, $response)
 {
 	// get request body and LINE signature
 	$body 	   = file_get_contents('php://input');
-	$signature = $_SERVER['HTTP_X_LINE_SIGNATURE'];
 
 	// log body and signature
 	file_put_contents('php://stderr', 'Body: '.$body);
 
-	// // Check LINE signature in request header
-	// if (empty($signature)){
-	// 	return $response->withStatus(400, 'Signature not set');
-	// }
-	//
-	// // Check Request Source
-	// if($_ENV['PASS_SIGNATURE'] == false && ! SignatureValidator::validateSignature($body, $_ENV['CHANNEL_SECRET'], $signature)){
-	// 	return $response->withStatus(400, 'Invalid signature');
-	// }
 
 	// Create bot client instance
 	$httpClient = new \LINE\LINEBot\HTTPClient\CurlHTTPClient($_ENV['CHANNEL_ACCESS_TOKEN']);

@@ -8,7 +8,7 @@ from copy import copy
 
 stopwords = [" ini", " itu", "kah", " kok",
              " lagian", "lah", "nah", "nya",
-             " pun", " saja", " yang",
+             " pun", " saja", " yang", " siapa"
              "siapa ", " berapa", "berapa ",
              " apa", "apa ", "bagaimana ",
              "dimana ", " kali", " ya", "kalau ",
