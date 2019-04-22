@@ -11,9 +11,7 @@ stopwords = [" ini", " itu", "kah", " kok",
              " pun", " saja", " yang",
              "siapa ", " berapa", "berapa ",
              " apa", "apa ", "bagaimana ",
-             "dimana ", " kali", " ya", "kalau ",
-             "sih", "tau ", " ga"]
-
+             "dimana ", " kali"]
 factory = StemmerFactory()
 stemmer = factory.create_stemmer()
 
@@ -43,13 +41,14 @@ readFile("pertanyaan.txt")
 #Baca kasus uji sendiri
 readFile("qa.txt")
 
+print(pertanyaan)
+
 def buildLast(pattern):
     dict = {}
     for letter in pattern:
         dict[letter] = pattern.rfind(letter)
     return dict
 
-#Boyer Moore Algorithm
 def bmMatch(pattern, text):
     dict = buildLast(pattern)
     n = len(text)
@@ -94,7 +93,6 @@ def computeFail(pattern):
                 j = fail[j-1]
     return fail
 
-#KMP Algorithm
 def kmpMatch(pattern, text):
     n = len(text)
     m = len(pattern)
@@ -113,8 +111,7 @@ def kmpMatch(pattern, text):
             i += 1
     return -1
 
-#Calculate percentage and return true if >= 90
-def good_percent(match_string, text):
+def find_fuzzy_match(match_string, text):
     count = 0
     n = len(match_string)
     m = len(text)
@@ -128,7 +125,7 @@ def good_percent(match_string, text):
             count += 1
     return (count / n >= 0.9)
 
-#Concat several question and return it
+
 def build_multiple():
     temp = "Apakah yang Anda maksud:<BR>"
     for i in range(len(q_list)):
@@ -137,29 +134,20 @@ def build_multiple():
         temp += "- " + q_list[i] + "?<BR>"
     return temp
 
-#main method to process the pattern
 def search_in_db(pattern):
-    #remove all special characters in front of string
     strip_pattern = re.sub(r"^\W+", "", pattern)
-
-    #remove all numbers and whitespaces in front of string
     strip_pattern = strip_pattern.lstrip('0123456789 ')
-
-    #if after removal, string length is 0, question is not valid
     if(len(strip_pattern) == 0):
         return json.dumps("Pertanyaan tidak valid, silahkan masukkan pertanyaan yang benar")
 
-    #if pattern is q_list, return all available question
     if(pattern == "q_list"):
         temp = ""
         for question in pertanyaan_asli:
             temp += question + "?" + "<BR>";
         return json.dumps(temp)
 
-    #clear the list
     q_list.clear()
 
-    #remove various stopwords
     temp = strip_pattern
     for word in stopwords:
         temp = copy(temp).lower().replace(word, "")
@@ -167,14 +155,16 @@ def search_in_db(pattern):
 
     stemmedPattern = stemmer.stem(strip_pattern.lower().replace('?', ''))
 
+    print(1)
+    print(stemmedPattern)
     #Mencari yang exact match
     for question in pertanyaan:
         if(bmMatch(stemmedPattern, question) > -1):
-            if(len(stemmedPattern) == len(question)):
-                return json.dumps(jawaban[pertanyaan.index(question)])
+            print(question)
             q_list.append(pertanyaan_asli[pertanyaan.index(question)])
     if(len(q_list) > 1):
-        return json.dumps(build_multiple())
+        #return json.dumps(build_multiple())
+        return build_multiple()
     elif(len(q_list) == 1):
         strip_pattern = q_list[0]
         temp = strip_pattern
@@ -182,14 +172,17 @@ def search_in_db(pattern):
             temp = copy(temp).lower().replace(word, "")
         strip_pattern = temp
         stemmedPattern = stemmer.stem(strip_pattern.lower().replace('?', ''))
-        return json.dumps(jawaban[pertanyaan.index(stemmedPattern)])
+        #return json.dumps(jawaban[pertanyaan.index(stemmedPattern)])
+        return jawaban[pertanyaan.index(stemmedPattern)]
 
+    print(2)
     #Mencari yang mirip > 90%
     for question in pertanyaan:
-        if(good_percent(stemmedPattern, question)):
+        if(find_fuzzy_match(stemmedPattern, question)):
             q_list.append(pertanyaan_asli[pertanyaan.index(question)])
     if(len(q_list) > 1):
-        return json.dumps(build_multiple())
+        #return json.dumps(build_multiple())
+        return build_multiple()
     elif(len(q_list) == 1):
         strip_pattern = q_list[0]
         temp = strip_pattern
@@ -197,8 +190,10 @@ def search_in_db(pattern):
             temp = copy(temp).lower().replace(word, "")
         strip_pattern = temp
         stemmedPattern = stemmer.stem(strip_pattern.lower().replace('?', ''))
-        return json.dumps(jawaban[pertanyaan.index(stemmedPattern)])
+        #return json.dumps(jawaban[pertanyaan.index(stemmedPattern)])
+        return jawaban[pertanyaan.index(stemmedPattern)]
 
+    print(3)
     #Regex
     get_word = re.findall(r'^\w+|\w+$', stemmedPattern)
     if(len(get_word) > 1):
@@ -208,8 +203,10 @@ def search_in_db(pattern):
     for question in pertanyaan:
         if(re.search(src_rx, question, re.IGNORECASE)):
             q_list.append(pertanyaan_asli[pertanyaan.index(question)])
+
     if(len(q_list) > 1):
-        return json.dumps(build_multiple())
+        # return json.dumps(build_multiple())
+        return build_multiple()
     elif(len(q_list) == 1):
         strip_pattern = q_list[0]
         temp = strip_pattern
@@ -217,7 +214,8 @@ def search_in_db(pattern):
             temp = copy(temp).lower().replace(word, "")
         strip_pattern = temp
         stemmedPattern = stemmer.stem(strip_pattern.lower().replace('?', ''))
-        return json.dumps(jawaban[pertanyaan.index(stemmedPattern)])
+        # return json.dumps(jawaban[pertanyaan.index(stemmedPattern)])
+        return jawaban[pertanyaan.index(stemmedPattern)]
 
     #Jika tidak ada yang ketemu
     # return json.dumps("Maaf, aku tidak mengerti pertanyaan Anda")
@@ -245,17 +243,7 @@ def main():
                 break
             else:
                 q_list.clear()
-        if(res is None):
-            print("Maaf, aku tidak mengerti pertanyaan Anda")
-
-    # pattern = input("Pattern to search: ")
-    # res = search_in_db(pattern)
-    # print(res)
-    # if(len(q_list) > 1):
-    #     pattern = input("> ")
-    #     res = search_in_db(pattern)
-    #     print(res)
 
 if __name__ == "__main__":
     main()
-    # print(search_in_db(sys.argv[1]))
+    #print(search_in_db(sys.argv[1]))

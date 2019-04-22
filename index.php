@@ -46,7 +46,7 @@ $app->post('/', function ($request, $response)
 	{
 		$usermsg = $event['message']['text'];
 		$usermsg = strtolower($usermsg);
-		if($usermsg == "halo" || $usermsg == "hi"){
+		if($usermsg == "halo" || $usermsg == "hi" || $usermsg == "hello"){
 			$reply = "Halo juga, aku Slothy!";
 		} else{
 			$exec_command = "cd engine && python string_matcher.py " . "\"" . $usermsg . "\"";
